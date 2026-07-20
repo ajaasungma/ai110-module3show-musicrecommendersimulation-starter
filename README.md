@@ -487,15 +487,15 @@ of *why* each one behaves the way it does.
 
 ## Limitations and Risks
 
-Summarize some limitations of your recommender.
+- **Tiny catalog.** Only 20 songs, and most genres have just one song.
+- **No real understanding.** It matches labels only — no lyrics, language, or how
+  a song actually sounds.
+- **Favors high energy.** The catalog leans loud, so the same high-energy songs
+  keep showing up for many users.
+- **Brittle inputs.** A capital letter ("Pop" vs "pop") or an out-of-range energy
+  value silently breaks the results.
 
-Examples:
-
-- It only works on a tiny catalog
-- It does not understand lyrics or language
-- It might over favor one genre or mood
-
-You will go deeper on this in your model card.
+I go deeper on these in the [model card](model_card.md).
 
 ---
 
@@ -504,11 +504,6 @@ You will go deeper on this in your model card.
 Read and complete `model_card.md`:
 
 [**Model Card**](model_card.md)
-
-Write 1 to 2 paragraphs here about what you learned:
-
-- about how recommenders turn data into predictions
-- about where bias or unfairness could show up in systems like this
 
 
 
