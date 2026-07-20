@@ -75,14 +75,29 @@ def load_songs(csv_path: str) -> List[Dict]:
     print(f"Loaded songs: {len(songs)}")
     return songs
 
+# --- Scoring weights ---------------------------------------------------------
+# EXPERIMENT (sensitivity test): "Weight Shift" -> double the importance of
+# energy and halve the importance of genre, to see how much the rankings depend
+# on the continuous energy feature vs. the categorical genre match.
+#   Genre:  3.0 -> 1.5  (halved)
+#   Energy: x2.0 -> x4.0 (doubled)
+# Math check: energy distance abs(song.energy - target) stays in [0, 1] for
+# valid inputs, so (1 - d) * 4.0 stays in [0, 4.0] (no negatives, no division).
+# Max valid score = 1.5 + 2.0 + 4.0 + 1.0 = 8.5.
+GENRE_WEIGHT = 1.5     # was 3.0
+MOOD_WEIGHT = 2.0      # unchanged
+ENERGY_WEIGHT = 4.0    # was 2.0
+ACOUSTIC_WEIGHT = 1.0  # unchanged
+
+
 def score_song(user_prefs: Dict, song: Dict) -> Tuple[float, List[str]]:
     """
     Scores a single song against user preferences using the Algorithm Recipe.
 
-    Scoring rule (see README "How The System Works"):
-      - Genre match       -> +3.0 if song genre == favorite_genre
+    Scoring rule (see README "How The System Works"), Weight Shift experiment:
+      - Genre match       -> +1.5 if song genre == favorite_genre   (halved)
       - Mood match        -> +2.0 if song mood  == favorite_mood
-      - Energy closeness  -> (1 - abs(song.energy - target_energy)) * 2.0
+      - Energy closeness  -> (1 - abs(song.energy - target_energy)) * 4.0 (doubled)
       - Acoustic bonus    -> +1.0 if likes_acoustic and acousticness > 0.7
 
     Returns (score, reasons) where reasons explains where the points came from.
@@ -91,25 +106,25 @@ def score_song(user_prefs: Dict, song: Dict) -> Tuple[float, List[str]]:
     score = 0.0
     reasons: List[str] = []
 
-    # Genre match (strongest signal of taste)
+    # Genre match (halved: no longer the dominant signal)
     if song["genre"] == user_prefs["favorite_genre"]:
-        score += 3.0
-        reasons.append("genre match (+3.0)")
+        score += GENRE_WEIGHT
+        reasons.append(f"genre match (+{GENRE_WEIGHT:.1f})")
 
-    # Mood match (a modifier, worth less than genre)
+    # Mood match (a modifier)
     if song["mood"] == user_prefs["favorite_mood"]:
-        score += 2.0
-        reasons.append("mood match (+2.0)")
+        score += MOOD_WEIGHT
+        reasons.append(f"mood match (+{MOOD_WEIGHT:.1f})")
 
-    # Energy closeness: max points at an exact match, fewer as it drifts.
-    energy_points = (1 - abs(song["energy"] - user_prefs["target_energy"])) * 2.0
+    # Energy closeness (doubled): max points at an exact match, fewer as it drifts.
+    energy_points = (1 - abs(song["energy"] - user_prefs["target_energy"])) * ENERGY_WEIGHT
     score += energy_points
     reasons.append(f"energy closeness (+{energy_points:.2f})")
 
     # Acoustic preference bonus
     if user_prefs.get("likes_acoustic") and song["acousticness"] > 0.7:
-        score += 1.0
-        reasons.append("acoustic match (+1.0)")
+        score += ACOUSTIC_WEIGHT
+        reasons.append(f"acoustic match (+{ACOUSTIC_WEIGHT:.1f})")
 
     return score, reasons
 
